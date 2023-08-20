@@ -72,3 +72,22 @@ pub async fn login(
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }
+
+pub async fn logout(
+    State(state): State<AppState>,
+    jar: PrivateCookiesJar,
+) -> Result<PrivateCookiesJar, StatusCode> {
+    let Some(cookie) = jar.get("foo").map(|cookie| cookie.value().to_owned()) else {
+        return Ok(jar)
+    };
+
+    let query = sqlx::query("DELETE FROM sessions WHERE session_id = $1")
+        .bind(cookie)
+        .execute(&state.postgres);
+
+    match query.await {
+        Ok(_) => Ok(jar.remove(Cookie::named("foo"))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
