@@ -132,3 +132,9 @@ pub async fn view_records(State(state): State<AppState>) -> Json<Vec<Note>> {
 
     Json(notes)
 }
+
+#[derive(Deserialize)]
+pub struct RecordRequest {
+    message: String,
+    owner: String,
+}
