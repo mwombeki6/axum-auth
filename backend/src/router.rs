@@ -25,4 +25,13 @@ pub async fn register(
         .bind(newuser.email)
         .bind(hashed_password)
         .execute(&state.postgres);
+
+    match query.await {
+        Ok(_) => (StatusCode::CREATED, "Account created!".to_string()).into_response(),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            format!("Something went wrong: {e}"),
+        )
+            .into_response(),
+    }
 }
