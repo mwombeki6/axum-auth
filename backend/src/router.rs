@@ -138,3 +138,22 @@ pub struct RecordRequest {
     message: String,
     owner: String,
 }
+
+pub async fn create_record(
+    State(state): State<AppState>,
+    Json(request): Json<RecordRequest>,
+) -> Response {
+    let query = sqlx::query("INSERT INTO notes (message, owner) VALUES ($1, $2)")
+        .bind(request.message)
+        .bind(request.owner)
+        .execute(&state.postgres);
+
+    match query.await {
+        Ok(_) => (StatusCode::CREATED, "Record created!".to_string()).into_response(),
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            format!("Unable to create record: {err}"),
+        )
+            .into_response(),
+    }
+}
