@@ -1,3 +1,30 @@
+use axum::{
+    extract::{Path, State},
+    http::{Request, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use axum_extra::extract::cookie::{Cookie, PrivateCookieJar, SameSite};
+use http::{
+    header::{ACCEPT, AUTHORIZATION, ORIGIN},
+    HeaderValue, Method,
+};
+use lettre::message::header::ContentType;
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
+use rand::distributions::{Alphanumeric, DistString};
+use serde::{Deserialize, Serialize};
+use sqlx::Row;
+use std::path::PathBuf;
+use time::Duration;
+use tower_http::cors::CorsLayer;
+
+use axum_extra::routing::SpaRouter;
+
+use crate::AppState;
+
 #[derive(Deserialize)]
 pub struct LoginDetails {
     username: String,
@@ -210,6 +237,16 @@ pub async fn view_records(State(state): State<AppState>) -> Json<Vec<Note>> {
         .unwrap();
 
     Json(notes)
+}
+
+pub async fn view_one_record(Path(id): Path<String>, State(state): State<AppState>) -> Json<Note> {
+    let note: Note = sqlx::query_as("SELECT * from notes WHERE id = $1")
+        .bind(id)
+        .fetch_one(&state.postgres)
+        .await
+        .unwrap();
+
+    Json(note)
 }
 
 #[derive(Deserialize)]

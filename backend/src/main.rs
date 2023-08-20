@@ -1,7 +1,13 @@
+mod router;
+use router::create_router;
+
 #[derive(Clone)]
 pub struct AppState {
     postgres: PgPool,
-    key: Key
+    key: Key,
+    smtp_email: String,
+    smtp_password: String,
+    domain: String,
 }
 
 impl FromRef<AppState> for Key {
@@ -16,14 +22,33 @@ async fn axum(
     #[shuttle_shared_db::Postgres] postgres: PgPool,
     #[shuttle_secrets::Secrets] secrets: SecretStore,
 ) -> shuttle_axum::ShuttleAxum {
-    sqlx::migrate!().run(&postgres).await;
+    sqlx::migrate!()
+        .run(&postgres)
+        .await
+        .expect("Something went wrong with migrating :(");
+
+    let smtp_email = secrets
+        .get("SMTP_EMAIL")
+        .expect("You need to set your SMTP_EMAIL secret!");
+
+    let smtp_password = secrets
+        .get("SMTP_PASSWORD")
+        .expect("You need to set your SMTP_PASSWORD secret!");
+
+// we need to set this so we can put it in our CorsLayer
+    let domain = secrets
+        .get("DOMAIN")
+        .expect("You need to set your DOMAIN secret!");
 
     let state = AppState {
         postgres,
-        key: Key::generate()
+        key: Key::generate(),
+        smtp_email,
+        smtp_password,
+        domain,
     };
 
     let router = create_router(static_folder, state);
 
-    Ok(router.into())
+    Ok(router.into())    
 }
