@@ -4,6 +4,43 @@ pub struct LoginDetails {
     password: String,
 }
 
+pub fn api_router(state: AppState) -> Router {
+    // CORS is required for our app to work
+        let cors = CorsLayer::new()
+            .allow_credentials(true)
+            .allow_methods(vec![Method::GET, Method::POST, Method::PUT, Method::DELETE])
+            .allow_headers(vec![ORIGIN, AUTHORIZATION, ACCEPT])
+            .allow_origin(state.domain.parse::<HeaderValue>().unwrap());
+    
+    // declare the records router
+        let notes_router = Router::new()
+            .route("/", get(view_records))
+            .route("/create", post(create_record))
+            .route(
+    // you can add multiple request methods to a route like this
+                "/:id",       get(view_one_record).put(edit_record).delete(destroy_record),
+            )
+            .route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                validate_session,
+            ));
+    
+    // the routes in this router should be public, so no middleware is required
+        let auth_router = Router::new()
+            .route("/register", post(register))
+            .route("/login", post(login))
+            .route("/forgot", post(forgot_password))
+            .route("/logout", get(logout));
+    
+    // return router that uses all routes from both individual routers, but add the CORS layer as well as AppState which is defined in our entrypoint function
+        Router::new()
+            .route("/health", get(health_check))
+            .nest("/notes", notes_router)
+            .nest("/auth", auth_router)
+            .with_state(state)
+            .layer(cors)
+    }
+
 pub fn create_router(state: AppState, folder: PathBuf) -> Router {
     let api_router = Router::new()
         .route("/register", post(register))
