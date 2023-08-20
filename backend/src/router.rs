@@ -78,6 +78,10 @@ pub fn create_router(static_folder: PathBuf, state: AppState) -> Router {
         .merge(SpaRouter::new("/", static_folder).index_file("index.html"))
 }
 
+pub async fn health_check() -> Response {
+    (StatusCode::OK, "OK!").into_response()
+}
+
 pub async fn register(
     State(state): State<AppState>,
     Json(newuser): Json<LoginDetails>,
@@ -101,9 +105,9 @@ pub async fn register(
 
 pub async fn login(
     State(mut state): State<AppState>,
-    jar: PrivateCookiesJar,
+    jar: PrivateCookieJar,
     Json(login): Json<LoginDetails>,
-) -> Result<(PrivateCookiesJar, StatusCode), StatusCode> {
+) -> Result<(PrivateCookieJar, StatusCode), StatusCode> {
     let query = sqlx::query("SELECT * FROM users WHERE username = $1")
         .bind(&login.username)
         .fetch_optional(&state.postgres);
@@ -138,8 +142,8 @@ pub async fn login(
 
 pub async fn logout(
     State(state): State<AppState>,
-    jar: PrivateCookiesJar,
-) -> Result<PrivateCookiesJar, StatusCode> {
+    jar: PrivateCookieJar,
+) -> Result<PrivateCookieJar, StatusCode> {
     let Some(cookie) = jar.get("foo").map(|cookie| cookie.value().to_owned()) else {
         return Ok(jar)
     };
