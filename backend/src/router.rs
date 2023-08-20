@@ -91,6 +91,45 @@ pub async fn logout(
     }
 }
 
+pub async fn forgot_password(
+    State(state): State<AppState>,
+    Json(email_recipient): Json<String>,
+) -> Response {
+    let new_password = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+
+let hashed_password = bcrypt::hash(&new_password, 10).unwrap();
+
+    sqlx::query("UPDATE users SET password = $1 WHERE email = $2")
+            .bind(hashed_password)
+            .bind(email_recipient)
+            .execute(&state.postgres)
+            .await;
+
+    let credentials = Credentials::new(state.smtp_email, state.smtp_password);
+
+    let message = format!("Hello!\n\n Your new password is: {new_password} \n\n Don't share this with anyone else. \n\n Kind regards, \nZest");
+
+    let email = Message::builder()
+        .from("noreply <your-gmail-address-here>".parse().unwrap())
+        .to(format!("<{email_recipient}>").parse().unwrap())
+        .subject("Forgot Password")
+        .header(ContentType::TEXT_PLAIN)
+        .body(message)
+        .unwrap();
+
+// build the SMTP relay with our credentials - in this case we'll be using gmail's SMTP because it's free
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(credentials)
+        .build();
+
+// this part x`doesn't really matter since we don't want the user to explicitly know if they've actually received an email or not for security purposes, but if we do then we can create an output based on what we return to the client
+    match mailer.send(&email) {
+        Ok(_) => (StatusCode::OK, "Sent".to_string()).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("Error: {e}")).into_response(),
+    }
+}
+
 pub async fn validate_session<B>(
     jar: PrivateCookieJar,
     State(state): State<AppState>,
@@ -172,6 +211,21 @@ pub async fn edit_record(
 
     match query.await {
         Ok(_) => (StatusCode::OK, format!("Record {id} edited ")).into_response(),
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            format!("Unable to edit message: {err}"),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn destroy_record(State(state): State<AppState>, Path(id): Path<i32>) -> Response {
+    let query = sqlx::query("DELETE FROM notes WHERE id = $1")
+        .bind(id)
+        .execute(&state.postgres);
+
+    match query.await {
+        Ok(_) => (StatusCode::OK, "Record deleted".to_string()).into_response(),
         Err(err) => (
             StatusCode::BAD_REQUEST,
             format!("Unable to edit message: {err}"),
