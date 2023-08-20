@@ -91,3 +91,29 @@ pub async fn logout(
     }
 }
 
+pub async fn validate_session<B>(
+    jar: PrivateCookieJar,
+    State(state): State<AppState>,
+// Request<B> and Next<B> are required types for middleware from a function in axum
+    request: Request<B>,
+    next: Next<B>,
+) -> (PrivateCookieJar, Response) {
+// attempt to get the cookie - if it can't find a cookie, return 403
+    let Some(cookie) = jar.get("foo").map(|cookie| cookie.value().to_owned()) else {
+
+        println!("Couldn't find a cookie in the jar");
+        return (jar,(StatusCode::FORBIDDEN, "Forbidden!".to_string()).into_response())
+    };
+
+// attempt to find the created session
+    let find_session = sqlx::query("SELECT * FROM sessions WHERE session_id = $1")
+                .bind(cookie)
+                .execute(&state.postgres)
+                .await;
+
+// if the created session is OK, carry on as normal and run the route - else, return 403
+    match find_session {
+        Ok(res) => (jar, next.run(request).await),
+        Err(_) => (jar, (StatusCode::FORBIDDEN, "Forbidden!".to_string()).into_response())
+    }
+}
