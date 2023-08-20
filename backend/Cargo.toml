@@ -1,0 +1,39 @@
+[package]
+name = "static-next-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# the rust framework we will be using - https://github.com/tokio-rs/axum/
+axum = "0.6.20"
+# extra functionality for Axum https://github.com/tokio-rs/axum/
+axum-extra = { version = "0.4.2", features = ["spa", "cookie-private"] }
+# encryption hashing for passwords - https://github.com/Keats/rust-bcrypt
+bcrypt = "0.13.0"
+# used for writing the CORS layer - https://github.com/hyperium/http
+http = "0.2.9"
+# send emails over SMTP - https://github.com/lettre/lettre
+lettre = "0.10.3"
+# random number generator (for creating a session id) - https://github.com/rust-random/rand
+rand = "0.8.5"
+# used to be able to deserialize structs from JSON - https://github.com/serde-rs/serde
+serde = { version = "1.0.152", features = ["derive"] }
+# environment variables on shuttle 
+shuttle-secrets = "0.12.0"
+# the service wrapper for shuttle
+shuttle-runtime = "0.12.0"
+# allow us to use axum with shuttle
+shuttle-axum = "0.12.0"
+# this is what we use to get a shuttle-provisioned database
+shuttle-shared-db = { version = "0.12.0", features = ["postgres"] }
+# shuttle static folder support
+shuttle-static-folder = "0.12.0"
+# we use this to query and connect to a database - https://github.com/launchbadge/sqlx/
+sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres"] }
+# middleware for axum router - https://github.com/tower-rs/tower-http
+tower-http = { version = "0.4.0", features = ["cors"] }
+# pre-req for using shuttle runtime    
+tokio = "1.26.0"
+# get a time variable for setting cookie max age
+time = "0.3.20"
