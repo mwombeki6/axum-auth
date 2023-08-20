@@ -157,3 +157,25 @@ pub async fn create_record(
             .into_response(),
     }
 }
+
+pub async fn edit_record(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+    Json(request): Json<RecordRequest>,
+) -> Response {
+    
+    let query = sqlx::query("UPDATE notes SET message = $1 WHERE id = $2 AND owner = $3")
+        .bind(request.message)
+        .bind(id)
+        .bind(request.owner)
+        .execute(&state.postgres);
+
+    match query.await {
+        Ok(_) => (StatusCode::OK, format!("Record {id} edited ")).into_response(),
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            format!("Unable to edit message: {err}"),
+        )
+            .into_response(),
+    }
+}
