@@ -117,3 +117,18 @@ pub async fn validate_session<B>(
         Err(_) => (jar, (StatusCode::FORBIDDEN, "Forbidden!".to_string()).into_response())
     }
 }
+
+#[derive(sqlx::FromRow, Deserialize, Serialize)]
+pub struct Note {
+    id: i32,
+    message: String,
+    owner: String,
+}
+
+pub async fn view_records(State(state): State<AppState>) -> Json<Vec<Note>> {
+    let notes: Vec<Note> = sqlx::query_as("SELECT * FROM notes")
+        .fetch_all(&state.postgres)
+        .await.unwrap();
+
+    Json(notes)
+}
