@@ -1,5 +1,5 @@
 [package]
-name = "static-next-server"
+name = "axum-auth"
 version = "0.1.0"
 edition = "2021"
 publish = false

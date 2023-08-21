@@ -240,6 +240,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-auth"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "bcrypt",
+ "http",
+ "lettre",
+ "rand",
+ "serde",
+ "shuttle-axum",
+ "shuttle-runtime",
+ "shuttle-secrets",
+ "shuttle-shared-db",
+ "shuttle-static-folder",
+ "sqlx",
+ "time",
+ "tokio",
+ "tower-http 0.4.3",
+]
+
+[[package]]
 name = "axum-core"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2465,28 +2487,6 @@ dependencies = [
  "once_cell",
  "tokio",
  "tokio-native-tls",
-]
-
-[[package]]
-name = "static-next-server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "axum-extra",
- "bcrypt",
- "http",
- "lettre",
- "rand",
- "serde",
- "shuttle-axum",
- "shuttle-runtime",
- "shuttle-secrets",
- "shuttle-shared-db",
- "shuttle-static-folder",
- "sqlx",
- "time",
- "tokio",
- "tower-http 0.4.3",
 ]
 
 [[package]]
